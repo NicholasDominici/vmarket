@@ -61,6 +61,10 @@ export default function IranPage() {
   const [quotesCountdown, setQuotesCountdown] = useState(REFRESH_INTERVAL_QUOTES);
   const [newsCountdown, setNewsCountdown] = useState(REFRESH_INTERVAL_NEWS);
   const [refreshing, setRefreshing] = useState(false);
+  const [iranStatus, setIranStatus] = useState<{
+    hormuzStatus: string; conflictStatus: string; summary: string;
+    keyDevelopments: string[]; oilImpact: string; updatedAt: string;
+  } | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   const fetchQuotes = useCallback(async (isRefresh = false) => {
@@ -146,11 +150,19 @@ export default function IranPage() {
     }
   }, []);
 
+  const fetchIranStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/iran-status');
+      if (res.ok) setIranStatus(await res.json());
+    } catch {}
+  }, []);
+
   // Initial load
   useEffect(() => {
     fetchQuotes();
     fetchNews();
-  }, [fetchQuotes, fetchNews]);
+    fetchIranStatus();
+  }, [fetchQuotes, fetchNews, fetchIranStatus]);
 
   // Auto-refresh countdown
   useEffect(() => {
@@ -233,12 +245,22 @@ export default function IranPage() {
         <div className="flex items-center gap-3 mb-2">
           <AlertTriangle className="w-5 h-5 text-data-negative animate-pulse" />
           <h1 className="text-lg font-semibold text-data-negative uppercase tracking-[0.12em]">
-            ACTIVE CONFLICT — Strait of Hormuz DISRUPTED
+            {iranStatus ? `${iranStatus.conflictStatus.replace(/_/g, ' ')} — Strait of Hormuz ${iranStatus.hormuzStatus}` : 'ACTIVE CONFLICT — Strait of Hormuz DISRUPTED'}
           </h1>
         </div>
         <div className="text-sm text-muted-foreground">
-          US & Israel launch strikes on Iran. IRGC closes Hormuz. Markets volatile.
+          {iranStatus?.summary || 'US & Israel launch strikes on Iran. IRGC closes Hormuz. Markets volatile.'}
         </div>
+        {iranStatus?.keyDevelopments && iranStatus.keyDevelopments.length > 0 && (
+          <div className="mt-2 space-y-1">
+            {iranStatus.keyDevelopments.map((dev, i) => (
+              <div key={i} className="text-xs text-muted-foreground/70">• {dev}</div>
+            ))}
+          </div>
+        )}
+        {iranStatus?.oilImpact && (
+          <div className="text-xs text-data-warning mt-2">🛢️ {iranStatus.oilImpact}</div>
+        )}
         {lastUpdated && (
           <div className="text-[10px] text-muted-foreground/50 mt-2">
             Last updated {lastUpdated.toLocaleTimeString()} · Next refresh in {quotesCountdown}s
@@ -333,7 +355,7 @@ export default function IranPage() {
         <div className="flex items-center gap-2">
           <Ship className="w-4 h-4 text-data-negative" />
           <span className="text-sm font-semibold text-data-negative uppercase tracking-wider">
-            Strait of Hormuz Status: CLOSED
+            Strait of {iranStatus?.hormuzStatus || 'CLOSED'}
           </span>
           <span className="text-xs text-muted-foreground ml-auto">
             IRGC restrictions in effect
