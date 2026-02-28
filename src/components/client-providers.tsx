@@ -1,56 +1,48 @@
 'use client';
 
+import '@rainbow-me/rainbowkit/styles.css';
+import { getDefaultConfig, RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
+import { WagmiProvider } from 'wagmi';
+import { arbitrum } from 'wagmi/chains';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, useEffect, type ReactNode } from 'react';
 
-function RainbowProviders({ children }: { children: ReactNode }) {
-  // Only import RainbowKit on client side
-  const [Provider, setProvider] = useState<React.ComponentType<{ children: ReactNode }> | null>(null);
+const config = getDefaultConfig({
+  appName: 'vMarket',
+  projectId: 'placeholder',
+  chains: [arbitrum],
+  ssr: true,
+});
 
-  useEffect(() => {
-    async function load() {
-      const [rk, wagmiMod, chains, rq] = await Promise.all([
-        import('@rainbow-me/rainbowkit'),
-        import('wagmi'),
-        import('wagmi/chains'),
-        import('@tanstack/react-query'),
-      ]);
-      // CSS imported in providers.tsx
-
-      const config = rk.getDefaultConfig({
-        appName: 'vMarket',
-        projectId: 'placeholder',
-        chains: [chains.arbitrum],
-        ssr: false,
-      });
-
-      const queryClient = new rq.QueryClient();
-
-      const Wrapper = ({ children: c }: { children: ReactNode }) => (
-        <wagmiMod.WagmiProvider config={config}>
-          <rq.QueryClientProvider client={queryClient}>
-            <rk.RainbowKitProvider
-              theme={rk.darkTheme({
-                accentColor: '#3ecf8e',
-                accentColorForeground: '#0a0a0a',
-                borderRadius: 'small',
-                fontStack: 'system',
-              })}
-            >
-              {c}
-            </rk.RainbowKitProvider>
-          </rq.QueryClientProvider>
-        </wagmiMod.WagmiProvider>
-      );
-      Wrapper.displayName = 'WagmiWrapper';
-      setProvider(() => Wrapper);
-    }
-    load();
-  }, []);
-
-  if (!Provider) return <>{children}</>;
-  return <Provider>{children}</Provider>;
-}
+const queryClient = new QueryClient();
 
 export function ClientProviders({ children }: { children: ReactNode }) {
-  return <RainbowProviders>{children}</RainbowProviders>;
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Always render WagmiProvider (it supports SSR with ssr:true)
+  // Only render RainbowKit after mount (it needs localStorage)
+  return (
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
+        {mounted ? (
+          <RainbowKitProvider
+            theme={darkTheme({
+              accentColor: '#3ecf8e',
+              accentColorForeground: '#0a0a0a',
+              borderRadius: 'small',
+              fontStack: 'system',
+            })}
+          >
+            {children}
+          </RainbowKitProvider>
+        ) : (
+          children
+        )}
+      </QueryClientProvider>
+    </WagmiProvider>
+  );
 }

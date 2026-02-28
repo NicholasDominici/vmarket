@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 // Safe wrapper - useAccount only works when WagmiProvider is mounted (client-side)
-function useSafeAccount() {
+function useAccount() {
   try {
     const wagmi = require('wagmi');
-    return wagmi.useSafeAccount();
+    return wagmi.useAccount();
   } catch {
     return { address: undefined, isConnected: false };
   }
@@ -55,7 +55,7 @@ type TradePanel = {
 };
 
 export default function TradePage() {
-  const { address, isConnected } = useSafeAccount();
+  const { address, isConnected } = useAccount();
   const [commodities, setCommodities] = useState<CommodityData[]>([]);
   const [userState, setUserState] = useState<UserState | null>(null);
   const [loading, setLoading] = useState(true);
