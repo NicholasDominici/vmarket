@@ -1,0 +1,16 @@
+[Unit]
+Description=vMarket Dashboard (Next.js)
+After=network.target
+
+[Service]
+Type=simple
+User=nicholasd
+WorkingDirectory=/home/nicholasd/Projects/market-dashboard
+Environment=PORT=3002
+Environment=NODE_ENV=production
+ExecStart=/home/linuxbrew/.linuxbrew/bin/node /home/nicholasd/Projects/market-dashboard/node_modules/.bin/next start --port 3002
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
