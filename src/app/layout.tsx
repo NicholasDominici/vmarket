@@ -27,6 +27,7 @@ export default function RootLayout({
               <NavLink href="/">Overview</NavLink>
               <NavLink href="/tech">Tech</NavLink>
               <NavLink href="/news">News</NavLink>
+              <NavLink href="/iran">Iran</NavLink>
               <NavLink href="/pinescript">PineScript</NavLink>
             </div>
           </div>
