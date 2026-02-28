@@ -158,3 +158,4 @@
   background: oklch(0.25 0 0);
   border-radius: 2px;
 }
+@import '@rainbow-me/rainbowkit/styles.css';
