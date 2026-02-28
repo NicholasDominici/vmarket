@@ -19,6 +19,54 @@ export const TECH_STOCKS = [
   'UBER', 'SHOP', 'SQ', 'PLTR', 'SNOW',
 ];
 
+export const SECTORS = [
+  { symbol: 'XLK', name: 'Technology' },
+  { symbol: 'XLF', name: 'Financials' },
+  { symbol: 'XLE', name: 'Energy' },
+  { symbol: 'XLV', name: 'Healthcare' },
+  { symbol: 'XLY', name: 'Consumer Disc.' },
+  { symbol: 'XLP', name: 'Consumer Staples' },
+  { symbol: 'XLI', name: 'Industrials' },
+  { symbol: 'XLB', name: 'Materials' },
+  { symbol: 'XLC', name: 'Communication' },
+  { symbol: 'XLRE', name: 'Real Estate' },
+  { symbol: 'XLU', name: 'Utilities' },
+];
+
+export const MEGA_CAPS = [
+  'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'NVDA', 'TSLA', 'BRK-B',
+  'JPM', 'V', 'UNH', 'JNJ', 'WMT', 'PG', 'MA', 'HD', 'BAC', 'COST', 'ABBV', 'KO',
+];
+
+export const CRYPTO_ADJACENT = ['COIN', 'MARA', 'MSTR', 'RIOT', 'BITF'];
+
+export const COMMODITIES = [
+  { symbol: 'GC=F', name: 'Gold' },
+  { symbol: 'SI=F', name: 'Silver' },
+  { symbol: 'CL=F', name: 'Oil' },
+  { symbol: 'NG=F', name: 'Nat Gas' },
+  { symbol: 'BTC-USD', name: 'Bitcoin' },
+  { symbol: 'ETH-USD', name: 'Ethereum' },
+];
+
+export const MEME_WATCHLIST = ['GME', 'AMC', 'BBBY', 'PLTR', 'SOFI', 'RIVN', 'LCID'];
+
+export const PORTFOLIO = ['HOOD'];
+
+export function getAllTrackedSymbols(): string[] {
+  const set = new Set<string>();
+  INDICES.forEach(i => set.add(i.symbol));
+  set.add('^VIX'); // For Fear & Greed gauge
+  TECH_STOCKS.forEach(s => set.add(s));
+  SECTORS.forEach(s => set.add(s.symbol));
+  MEGA_CAPS.forEach(s => set.add(s));
+  CRYPTO_ADJACENT.forEach(s => set.add(s));
+  COMMODITIES.forEach(c => set.add(c.symbol));
+  MEME_WATCHLIST.forEach(s => set.add(s));
+  PORTFOLIO.forEach(s => set.add(s));
+  return Array.from(set);
+}
+
 async function fetchJSON(url: string) {
   const res = await fetch(url, {
     headers,
