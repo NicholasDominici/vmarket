@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { formatPercent, formatCurrency } from '@/lib/utils';
 import {
   AlertTriangle, TrendingUp, TrendingDown, Loader2, RefreshCw,
-  Ship, Plane, Shield, Flame, DollarSign, Clock
+  Ship, Plane, Shield, Flame, DollarSign, Clock,
+  BarChart3,
 } from 'lucide-react';
 import { MiniSparkline } from '@/components/overview/mini-sparkline';
 import Link from 'next/link';
@@ -18,8 +19,19 @@ type NewsItem = {
   providerPublishTime?: number;
 };
 
+type PolymarketItem = {
+  question: string;
+  yesPrice: number;
+  noPrice: number;
+  volume: number;
+  liquidity: number;
+  endDate: string;
+  url: string;
+};
+
 const REFRESH_INTERVAL_QUOTES = 60; // 60 seconds
 const REFRESH_INTERVAL_NEWS = 300; // 5 minutes
+const REFRESH_INTERVAL_POLYMARKET = 60; // 60 seconds
 
 // Iran crisis tickers organized by category
 const OIL_ENERGY = ['CL=F', 'BZ=F', 'NG=F', 'XLE', 'USO', 'XOP', 'OXY', 'CVX', 'XOM', 'COP', 'SLB', 'HAL'];
@@ -66,6 +78,8 @@ export default function IranPage() {
     keyDevelopments: string[]; oilImpact: string; updatedAt: string;
   } | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const [polymarkets, setPolymarkets] = useState<PolymarketItem[]>([]);
+  const [polymarketsLoading, setPolymarketsLoading] = useState(true);
 
   const fetchQuotes = useCallback(async (isRefresh = false) => {
     try {
@@ -157,12 +171,27 @@ export default function IranPage() {
     } catch {}
   }, []);
 
+  const fetchPolymarket = useCallback(async () => {
+    try {
+      const res = await fetch('/api/polymarket');
+      if (res.ok) {
+        const data: PolymarketItem[] = await res.json();
+        setPolymarkets(data);
+      }
+    } catch {
+      // Non-critical
+    } finally {
+      setPolymarketsLoading(false);
+    }
+  }, []);
+
   // Initial load
   useEffect(() => {
     fetchQuotes();
     fetchNews();
     fetchIranStatus();
-  }, [fetchQuotes, fetchNews, fetchIranStatus]);
+    fetchPolymarket();
+  }, [fetchQuotes, fetchNews, fetchIranStatus, fetchPolymarket]);
 
   // Auto-refresh countdown
   useEffect(() => {
@@ -170,6 +199,7 @@ export default function IranPage() {
       setQuotesCountdown(prev => {
         if (prev <= 1) {
           fetchQuotes(true);
+          fetchPolymarket();
           return REFRESH_INTERVAL_QUOTES;
         }
         return prev - 1;
@@ -184,7 +214,7 @@ export default function IranPage() {
       });
     }, 1000);
     return () => clearInterval(countdownRef.current);
-  }, [fetchQuotes, fetchNews]);
+  }, [fetchQuotes, fetchNews, fetchPolymarket]);
 
   if (loading) {
     return (
@@ -276,6 +306,7 @@ export default function IranPage() {
             setNewsCountdown(REFRESH_INTERVAL_NEWS);
             fetchQuotes(true);
             fetchNews();
+            fetchPolymarket();
           }}
           className="p-1.5 rounded-md hover:bg-secondary/50 transition-colors"
           title="Refresh now"
@@ -348,6 +379,77 @@ export default function IranPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Prediction Markets (Polymarket) */}
+      <div className="border border-border rounded-md bg-card p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <BarChart3 className="w-3.5 h-3.5 text-purple-400" />
+          <span className="text-[11px] text-muted-foreground uppercase tracking-wider">
+            \uD83D\uDD2E Prediction Markets (Polymarket)
+          </span>
+        </div>
+        {polymarketsLoading ? (
+          <div className="flex items-center gap-2 py-4">
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Loading prediction markets...</span>
+          </div>
+        ) : polymarkets.length === 0 ? (
+          <div className="text-xs text-muted-foreground py-2">No active prediction markets found</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {polymarkets.map((market, i) => {
+              const yesPct = Math.round(market.yesPrice * 100);
+              const noPct = Math.round(market.noPrice * 100);
+              const volumeStr = market.volume >= 1_000_000
+                ? `$${(market.volume / 1_000_000).toFixed(1)}M`
+                : market.volume >= 1_000
+                  ? `$${(market.volume / 1_000).toFixed(0)}K`
+                  : `$${market.volume.toFixed(0)}`;
+              const endStr = market.endDate
+                ? new Date(market.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                : '';
+              return (
+                <a
+                  key={i}
+                  href={market.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="border border-border/50 rounded-md p-3 glow-interactive block"
+                >
+                  <div className="text-xs font-medium leading-snug mb-3 min-h-[2.5rem]">
+                    {market.question}
+                  </div>
+                  {/* Probability bar */}
+                  <div className="flex h-6 rounded overflow-hidden mb-2">
+                    <div
+                      className="flex items-center justify-center text-[10px] font-bold text-white"
+                      style={{
+                        width: `${Math.max(yesPct, 8)}%`,
+                        backgroundColor: '#3ecf8e',
+                      }}
+                    >
+                      {yesPct > 10 && `YES ${yesPct}%`}
+                    </div>
+                    <div
+                      className="flex items-center justify-center text-[10px] font-bold text-white"
+                      style={{
+                        width: `${Math.max(noPct, 8)}%`,
+                        backgroundColor: '#f45b69',
+                      }}
+                    >
+                      {noPct > 10 && `NO ${noPct}%`}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                    <span>Vol: {volumeStr}</span>
+                    {endStr && <span>Ends: {endStr}</span>}
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Hormuz Status */}
