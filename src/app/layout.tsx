@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { NavLink } from "@/components/nav-link";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
   title: "vMarket",
@@ -13,7 +14,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');document.documentElement.classList.toggle('dark',t?t==='dark':true)}catch(e){document.documentElement.classList.add('dark')}})()`,
+          }}
+        />
+      </head>
       <body className="min-h-screen">
         <header className="border-b border-border bg-background/95 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center h-11 gap-0">
@@ -29,6 +37,9 @@ export default function RootLayout({
               <NavLink href="/news">News</NavLink>
               <NavLink href="/iran">Iran</NavLink>
               <NavLink href="/pinescript">PineScript</NavLink>
+            </div>
+            <div className="ml-auto">
+              <ThemeToggle />
             </div>
           </div>
         </header>

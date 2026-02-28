@@ -248,13 +248,13 @@ export default function IranPage() {
             {iranStatus ? `${iranStatus.conflictStatus.replace(/_/g, ' ')} — Strait of Hormuz ${iranStatus.hormuzStatus}` : 'ACTIVE CONFLICT — Strait of Hormuz DISRUPTED'}
           </h1>
         </div>
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-foreground/80">
           {iranStatus?.summary || 'US & Israel launch strikes on Iran. IRGC closes Hormuz. Markets volatile.'}
         </div>
         {iranStatus?.keyDevelopments && iranStatus.keyDevelopments.length > 0 && (
           <div className="mt-2 space-y-1">
             {iranStatus.keyDevelopments.map((dev, i) => (
-              <div key={i} className="text-xs text-muted-foreground/70">• {dev}</div>
+              <div key={i} className="text-xs text-foreground/60">• {dev}</div>
             ))}
           </div>
         )}
