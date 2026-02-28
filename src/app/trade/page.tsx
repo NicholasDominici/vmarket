@@ -30,17 +30,17 @@ import {
 const REFRESH_INTERVAL = 15;
 
 const COMMODITY_ICONS: Record<string, typeof Flame> = {
-  '@GOLD': Gem,
-  '@SILVER': Gem,
-  '@OIL': Droplets,
-  '@GAS': Zap,
+  'PAXG': Gem,
+  'BTC': Flame,
+  'ETH': Droplets,
+  'SOL': Zap,
 };
 
 const COMMODITY_LABELS: Record<string, string> = {
-  '@GOLD': 'Gold',
-  '@SILVER': 'Silver',
-  '@OIL': 'Crude Oil',
-  '@GAS': 'Natural Gas',
+  'PAXG': 'Gold (PAXG)',
+  'BTC': 'Bitcoin',
+  'ETH': 'Ethereum',
+  'SOL': 'Solana',
 };
 
 const LEVERAGE_OPTIONS = [1, 2, 3, 5, 10, 20, 50];
@@ -191,7 +191,7 @@ export default function TradePage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <h1 className="text-sm font-medium text-foreground/70 uppercase tracking-[0.12em]">
-            Commodity Perps
+            Perpetuals
           </h1>
           <span className="text-[10px] text-muted-foreground px-2 py-0.5 border border-border rounded-sm">
             HYPERLIQUID DEX
@@ -214,6 +214,29 @@ export default function TradePage() {
       {lastUpdated && (
         <div className="text-[10px] text-muted-foreground/50">
           Updated {lastUpdated.toLocaleTimeString()}
+        </div>
+      )}
+
+      {/* Connect Wallet Banner */}
+      {!isConnected && (
+        <div className="border-2 border-purple-500/30 rounded-md bg-purple-500/5 p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Wallet className="w-5 h-5 text-purple-400" />
+            <div>
+              <div className="text-sm font-medium">Connect your wallet to start trading</div>
+              <div className="text-xs text-muted-foreground">Trade perpetual futures on Hyperliquid DEX — BTC, ETH, SOL, Gold (PAXG) and more</div>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              // Trigger RainbowKit connect modal
+              const btn = document.querySelector('[class*="Connect"]') as HTMLButtonElement;
+              if (btn) btn.click();
+            }}
+            className="h-8 px-4 text-xs font-medium rounded-md bg-purple-500 text-white hover:bg-purple-600 transition-all uppercase tracking-wider shrink-0"
+          >
+            Connect Wallet
+          </button>
         </div>
       )}
 
@@ -517,7 +540,7 @@ export default function TradePage() {
         <div className="border border-border rounded-md bg-card p-6 text-center">
           <Wallet className="w-5 h-5 text-muted-foreground mx-auto mb-2" />
           <div className="text-sm text-muted-foreground">
-            Connect your wallet to view balances and trade
+            Wallet connected — ready to trade
           </div>
           <div className="text-[10px] text-muted-foreground/50 mt-1">
             Use the connect button in the header

@@ -386,7 +386,7 @@ export default function IranPage() {
         <div className="flex items-center gap-2 mb-3">
           <BarChart3 className="w-3.5 h-3.5 text-purple-400" />
           <span className="text-[11px] text-muted-foreground uppercase tracking-wider">
-            \uD83D\uDD2E Prediction Markets (Polymarket)
+            🔮 Prediction Markets (Polymarket)
           </span>
         </div>
         {polymarketsLoading ? (
