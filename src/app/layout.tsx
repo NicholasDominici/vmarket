@@ -8,6 +8,7 @@ import { ConnectButton } from "@/components/connect-button";
 export const metadata: Metadata = {
   title: "vMarket",
   description: "Market analysis dashboard",
+  icons: { icon: '/favicon.svg' },
 };
 
 export default function RootLayout({

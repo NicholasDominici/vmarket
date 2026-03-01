@@ -10,6 +10,7 @@ function useAccount() {
     return { address: undefined, isConnected: false };
   }
 }
+import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import {
   getMetaAndAssetCtxs,
@@ -62,6 +63,7 @@ type TradePanel = {
 
 export default function TradePage() {
   const { address, isConnected } = useAccount();
+  const { openConnectModal } = useConnectModal();
   const [commodities, setCommodities] = useState<CommodityData[]>([]);
 
   const [userState, setUserState] = useState<UserState | null>(null);
@@ -330,11 +332,7 @@ export default function TradePage() {
             </div>
           </div>
           <button
-            onClick={() => {
-              // Trigger RainbowKit connect modal
-              const btn = document.querySelector('[class*="Connect"]') as HTMLButtonElement;
-              if (btn) btn.click();
-            }}
+            onClick={() => openConnectModal?.()}
             className="h-8 px-4 text-xs font-medium rounded-md bg-purple-500 text-white hover:bg-purple-600 transition-all uppercase tracking-wider shrink-0"
           >
             Connect Wallet
