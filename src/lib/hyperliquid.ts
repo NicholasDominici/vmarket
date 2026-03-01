@@ -76,6 +76,27 @@ export async function getL2Book(coin: string): Promise<{ levels: Array<Array<{ p
   return postInfo({ type: 'l2Book', coin }) as Promise<{ levels: Array<Array<{ px: string; sz: string; n: number }>> }>;
 }
 
+
+// Spot tokens of interest (gold-related)
+export const SPOT_TOKENS = [
+  { name: 'GOLD', spotSymbol: '@115', label: 'HyperGold (HOLD)', fullName: 'HyperGold' },
+  { name: 'XAUT', spotSymbol: '@182', label: 'Tether Gold (XAUT)', fullName: 'XAUT0' },
+] as const;
+
+export type SpotData = {
+  name: string;
+  label: string;
+  midPrice: number;
+};
+
+export function getSpotData(mids: Record<string, string>): SpotData[] {
+  return SPOT_TOKENS.map(t => ({
+    name: t.name,
+    label: t.label,
+    midPrice: mids[t.spotSymbol] ? parseFloat(mids[t.spotSymbol]) : 0,
+  }));
+}
+
 export function getCommodityData(
   meta: { universe: AssetMeta[] },
   assetCtxs: AssetCtx[],

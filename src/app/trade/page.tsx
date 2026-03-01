@@ -21,6 +21,8 @@ import {
   type UserState,
   type AssetMeta,
   type AssetCtx,
+  getSpotData,
+  type SpotData,
 } from '@/lib/hyperliquid';
 import {
   Loader2, RefreshCw, TrendingUp, TrendingDown,
@@ -63,6 +65,7 @@ export default function TradePage() {
   const [commodities, setCommodities] = useState<CommodityData[]>([]);
 
   const [userState, setUserState] = useState<UserState | null>(null);
+  const [spotData, setSpotData] = useState<SpotData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [countdown, setCountdown] = useState(REFRESH_INTERVAL);
@@ -103,6 +106,7 @@ export default function TradePage() {
       const [meta, assetCtxs] = metaAndCtxs;
       const data = getCommodityData(meta, assetCtxs, mids);
       setCommodities(data);
+      setSpotData(getSpotData(mids));
       setLastUpdated(new Date());
       setCountdown(REFRESH_INTERVAL);
     } catch (e: unknown) {
@@ -266,6 +270,54 @@ export default function TradePage() {
           )}
         </div>
       </div>
+
+      {/* Spot Gold Tokens (24/7) */}
+      {spotData.length > 0 && (
+        <div className="border border-border rounded-md bg-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Gem className="w-3.5 h-3.5 text-yellow-400" />
+            <span className="text-[11px] text-muted-foreground uppercase tracking-wider">
+              Spot Gold — Hyperliquid
+            </span>
+            <a
+              href="https://app.hyperliquid.xyz/trade/xyz:GOLD"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[9px] text-purple-400 hover:text-purple-300 ml-auto"
+            >
+              Trade on Hyperliquid →
+            </a>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {spotData.map((s) => (
+              <div key={s.name} className="border border-border/50 rounded-md p-3 glow-interactive">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Gem className="w-3 h-3 text-yellow-400" />
+                  <span className="text-[10px] text-muted-foreground uppercase">{s.label}</span>
+                </div>
+                <div className="text-lg font-semibold tabular-nums">
+                  ${s.midPrice < 1
+                    ? s.midPrice.toFixed(6)
+                    : s.midPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                </div>
+              </div>
+            ))}
+            {/* Also show PAXG perp for comparison */}
+            {commodities.filter(c => c.symbol === 'PAXG').map(c => (
+              <div key="paxg-ref" className="border border-border/50 rounded-md p-3 glow-interactive">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Gem className="w-3 h-3 text-yellow-400" />
+                  <span className="text-[10px] text-muted-foreground uppercase">PAXG Perp</span>
+                </div>
+                <div className="text-lg font-semibold tabular-nums">
+                  ${c.markPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                </div>
+                <div className="text-[9px] text-muted-foreground/50 mt-1">Reference: physical gold</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Connect Wallet Banner */}
       {!isConnected && (
