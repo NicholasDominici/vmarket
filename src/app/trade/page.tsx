@@ -57,6 +57,7 @@ type TradePanel = {
 export default function TradePage() {
   const { address, isConnected } = useAccount();
   const [commodities, setCommodities] = useState<CommodityData[]>([]);
+  const [realCommodities, setRealCommodities] = useState<any[]>([]);
   const [userState, setUserState] = useState<UserState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -90,10 +91,12 @@ export default function TradePage() {
     try {
       if (isRefresh) setRefreshing(true);
 
-      const [metaAndCtxs, mids] = await Promise.all([
+      const [metaAndCtxs, mids, commodityQuotes] = await Promise.all([
         getMetaAndAssetCtxs(),
         getAllMids(),
+        fetch('/api/quotes?symbols=CL=F,BZ=F,GC=F,SI=F,NG=F,HG=F').then(r => r.ok ? r.json() : []).catch(() => []),
       ]);
+      setRealCommodities(commodityQuotes);
 
       const [meta, assetCtxs] = metaAndCtxs;
       const data = getCommodityData(meta, assetCtxs, mids);
@@ -216,6 +219,48 @@ export default function TradePage() {
           Updated {lastUpdated.toLocaleTimeString()}
         </div>
       )}
+
+      {/* Real Commodities Prices */}
+      <div className="border border-border rounded-md bg-card p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Flame className="w-3.5 h-3.5 text-data-warning" />
+          <span className="text-[11px] text-muted-foreground uppercase tracking-wider">
+            Commodities (Futures)
+          </span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {realCommodities.map((item: any) => {
+            const d = item.data;
+            if (!d) return null;
+            const price = d.regularMarketPrice || 0;
+            const changePct = d.regularMarketChangePercent || 0;
+            const labels: Record<string, string> = {
+              'CL=F': 'WTI Crude Oil',
+              'BZ=F': 'Brent Crude',
+              'GC=F': 'Gold',
+              'SI=F': 'Silver',
+              'NG=F': 'Natural Gas',
+              'HG=F': 'Copper',
+            };
+            return (
+              <div key={item.symbol} className="border border-border/50 rounded-md p-3 glow-interactive">
+                <div className="text-[10px] text-muted-foreground uppercase mb-1">
+                  {labels[item.symbol] || item.symbol}
+                </div>
+                <div className="text-lg font-semibold tabular-nums">
+                  ${price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                </div>
+                <div className={`text-xs font-medium tabular-nums ${changePct >= 0 ? 'text-data-positive' : 'text-data-negative'}`}>
+                  {changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}%
+                </div>
+              </div>
+            );
+          })}
+          {realCommodities.length === 0 && (
+            <div className="col-span-full text-xs text-muted-foreground">Markets closed — prices update when trading resumes</div>
+          )}
+        </div>
+      </div>
 
       {/* Connect Wallet Banner */}
       {!isConnected && (
