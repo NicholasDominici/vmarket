@@ -7,6 +7,7 @@ import {
   rainbowWallet,
   coinbaseWallet,
   rabbyWallet,
+  walletConnectWallet,
 } from '@rainbow-me/rainbowkit/wallets';
 import { createConfig, http, WagmiProvider } from 'wagmi';
 import { arbitrum } from 'wagmi/chains';
@@ -17,12 +18,12 @@ const connectors = connectorsForWallets(
   [
     {
       groupName: 'Popular',
-      wallets: [metaMaskWallet, rabbyWallet, coinbaseWallet, rainbowWallet],
+      wallets: [metaMaskWallet, rabbyWallet, coinbaseWallet, rainbowWallet, walletConnectWallet],
     },
   ],
   {
     appName: 'vMarket',
-    projectId: 'none', // Not used for injected wallets
+    projectId: '4e8e6bca-cdf3-46ef-abb2-02d008aa0c6b', // Not used for injected wallets
   }
 );
 
