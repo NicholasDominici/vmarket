@@ -1,16 +1,37 @@
 'use client';
 
 import '@rainbow-me/rainbowkit/styles.css';
-import { getDefaultConfig, RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
-import { WagmiProvider } from 'wagmi';
+import { RainbowKitProvider, darkTheme, connectorsForWallets } from '@rainbow-me/rainbowkit';
+import {
+  metaMaskWallet,
+  rainbowWallet,
+  coinbaseWallet,
+  rabbyWallet,
+} from '@rainbow-me/rainbowkit/wallets';
+import { createConfig, http, WagmiProvider } from 'wagmi';
 import { arbitrum } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, useEffect, type ReactNode } from 'react';
 
-const config = getDefaultConfig({
-  appName: 'vMarket',
-  projectId: 'placeholder',
+const connectors = connectorsForWallets(
+  [
+    {
+      groupName: 'Popular',
+      wallets: [metaMaskWallet, rabbyWallet, coinbaseWallet, rainbowWallet],
+    },
+  ],
+  {
+    appName: 'vMarket',
+    projectId: 'none', // Not used for injected wallets
+  }
+);
+
+const config = createConfig({
+  connectors,
   chains: [arbitrum],
+  transports: {
+    [arbitrum.id]: http(),
+  },
   ssr: true,
 });
 
@@ -23,8 +44,6 @@ export function ClientProviders({ children }: { children: ReactNode }) {
     setMounted(true);
   }, []);
 
-  // Always render WagmiProvider (it supports SSR with ssr:true)
-  // Only render RainbowKit after mount (it needs localStorage)
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
