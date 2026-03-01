@@ -1,38 +1,16 @@
 'use client';
 
 import '@rainbow-me/rainbowkit/styles.css';
-import { RainbowKitProvider, darkTheme, connectorsForWallets } from '@rainbow-me/rainbowkit';
-import {
-  metaMaskWallet,
-  rainbowWallet,
-  coinbaseWallet,
-  rabbyWallet,
-  walletConnectWallet,
-} from '@rainbow-me/rainbowkit/wallets';
-import { createConfig, http, WagmiProvider } from 'wagmi';
+import { getDefaultConfig, RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
+import { WagmiProvider } from 'wagmi';
 import { arbitrum } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, useEffect, type ReactNode } from 'react';
 
-const connectors = connectorsForWallets(
-  [
-    {
-      groupName: 'Popular',
-      wallets: [metaMaskWallet, rabbyWallet, coinbaseWallet, rainbowWallet, walletConnectWallet],
-    },
-  ],
-  {
-    appName: 'vMarket',
-    projectId: '4e8e6bca-cdf3-46ef-abb2-02d008aa0c6b', // Not used for injected wallets
-  }
-);
-
-const config = createConfig({
-  connectors,
+const config = getDefaultConfig({
+  appName: 'vMarket',
+  projectId: '4e8e6bca-cdf3-46ef-abb2-02d008aa0c6b',
   chains: [arbitrum],
-  transports: {
-    [arbitrum.id]: http(),
-  },
   ssr: true,
 });
 
