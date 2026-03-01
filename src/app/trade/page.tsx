@@ -34,6 +34,8 @@ const COMMODITY_ICONS: Record<string, typeof Flame> = {
   'BTC': Flame,
   'ETH': Droplets,
   'SOL': Zap,
+  'HYPE': TrendingUp,
+  'AVAX': Flame,
 };
 
 const COMMODITY_LABELS: Record<string, string> = {
@@ -41,6 +43,8 @@ const COMMODITY_LABELS: Record<string, string> = {
   'BTC': 'Bitcoin',
   'ETH': 'Ethereum',
   'SOL': 'Solana',
+  'HYPE': 'Hyperliquid',
+  'AVAX': 'Avalanche',
 };
 
 const LEVERAGE_OPTIONS = [1, 2, 3, 5, 10, 20, 50];
@@ -57,7 +61,7 @@ type TradePanel = {
 export default function TradePage() {
   const { address, isConnected } = useAccount();
   const [commodities, setCommodities] = useState<CommodityData[]>([]);
-  const [realCommodities, setRealCommodities] = useState<any[]>([]);
+
   const [userState, setUserState] = useState<UserState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -91,12 +95,10 @@ export default function TradePage() {
     try {
       if (isRefresh) setRefreshing(true);
 
-      const [metaAndCtxs, mids, commodityQuotes] = await Promise.all([
+      const [metaAndCtxs, mids] = await Promise.all([
         getMetaAndAssetCtxs(),
         getAllMids(),
-        fetch('/api/quotes?symbols=CL=F,BZ=F,GC=F,SI=F,NG=F,HG=F').then(r => r.ok ? r.json() : []).catch(() => []),
       ]);
-      setRealCommodities(commodityQuotes);
 
       const [meta, assetCtxs] = metaAndCtxs;
       const data = getCommodityData(meta, assetCtxs, mids);
@@ -220,32 +222,30 @@ export default function TradePage() {
         </div>
       )}
 
-      {/* Real Commodities Prices */}
+      {/* Live Prices (24/7 via Hyperliquid) */}
       <div className="border border-border rounded-md bg-card p-4">
         <div className="flex items-center gap-2 mb-3">
           <Flame className="w-3.5 h-3.5 text-data-warning" />
           <span className="text-[11px] text-muted-foreground uppercase tracking-wider">
-            Commodities (Futures)
+            Live Prices — 24/7
+          </span>
+          <span className="text-[9px] text-data-positive px-1.5 py-0.5 border border-data-positive/30 rounded-sm ml-auto">
+            LIVE
           </span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {realCommodities.map((item: any) => {
-            const d = item.data;
-            if (!d) return null;
-            const price = d.regularMarketPrice || 0;
-            const changePct = d.regularMarketChangePercent || 0;
-            const labels: Record<string, string> = {
-              'CL=F': 'WTI Crude Oil',
-              'BZ=F': 'Brent Crude',
-              'GC=F': 'Gold',
-              'SI=F': 'Silver',
-              'NG=F': 'Natural Gas',
-              'HG=F': 'Copper',
-            };
+          {commodities.map((c) => {
+            const Icon = COMMODITY_ICONS[c.symbol] || Flame;
+            const label = COMMODITY_LABELS[c.symbol] || c.symbol;
+            const price = c.markPrice || c.midPrice;
+            const changePct = c.prevDayPx && c.prevDayPx > 0
+              ? ((price - c.prevDayPx) / c.prevDayPx) * 100
+              : 0;
             return (
-              <div key={item.symbol} className="border border-border/50 rounded-md p-3 glow-interactive">
-                <div className="text-[10px] text-muted-foreground uppercase mb-1">
-                  {labels[item.symbol] || item.symbol}
+              <div key={c.symbol} className="border border-border/50 rounded-md p-3 glow-interactive">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Icon className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground uppercase">{label}</span>
                 </div>
                 <div className="text-lg font-semibold tabular-nums">
                   ${price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
@@ -253,11 +253,16 @@ export default function TradePage() {
                 <div className={`text-xs font-medium tabular-nums ${changePct >= 0 ? 'text-data-positive' : 'text-data-negative'}`}>
                   {changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}%
                 </div>
+                {c.dayVolume > 0 && (
+                  <div className="text-[9px] text-muted-foreground/50 mt-1">
+                    Vol: ${c.dayVolume >= 1e6 ? (c.dayVolume/1e6).toFixed(1)+'M' : c.dayVolume >= 1e3 ? (c.dayVolume/1e3).toFixed(0)+'K' : c.dayVolume.toFixed(0)}
+                  </div>
+                )}
               </div>
             );
           })}
-          {realCommodities.length === 0 && (
-            <div className="col-span-full text-xs text-muted-foreground">Markets closed — prices update when trading resumes</div>
+          {commodities.length === 0 && (
+            <div className="col-span-full text-xs text-muted-foreground">Loading prices...</div>
           )}
         </div>
       </div>

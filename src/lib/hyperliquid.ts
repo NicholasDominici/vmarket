@@ -1,6 +1,6 @@
 const INFO_URL = '/api/hyperliquid';
 
-export const COMMODITY_PERPS = ['PAXG', 'BTC', 'ETH', 'SOL'] as const;
+export const COMMODITY_PERPS = ['PAXG', 'BTC', 'ETH', 'SOL', 'HYPE', 'AVAX'] as const;
 export type CommodityPerp = (typeof COMMODITY_PERPS)[number];
 
 export type AssetMeta = {
