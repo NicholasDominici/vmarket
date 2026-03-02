@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAccount } from 'wagmi';
+import { useHyperliquidWs } from '@/lib/use-hyperliquid-ws';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import {
@@ -56,6 +57,7 @@ type TradePanel = {
 export default function TradePage() {
   const { address, isConnected } = useAccount();
   const { openConnectModal } = useConnectModal();
+  const { prices: livePrices, connected: wsConnected } = useHyperliquidWs();
   const [commodities, setCommodities] = useState<CommodityData[]>([]);
 
   const [userState, setUserState] = useState<UserState | null>(null);
@@ -227,15 +229,15 @@ export default function TradePage() {
           <span className="text-[11px] text-muted-foreground uppercase tracking-wider">
             Live Prices — 24/7
           </span>
-          <span className="text-[9px] text-data-positive px-1.5 py-0.5 border border-data-positive/30 rounded-sm ml-auto">
-            LIVE
+          <span className={`text-[9px] px-1.5 py-0.5 border rounded-sm ml-auto ${wsConnected ? 'text-data-positive border-data-positive/30' : 'text-muted-foreground border-border'}`}>
+            {wsConnected ? '● LIVE' : '○ POLLING'}
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {commodities.map((c) => {
             const Icon = COMMODITY_ICONS[c.symbol] || Flame;
             const label = COMMODITY_LABELS[c.symbol] || c.symbol;
-            const price = c.markPrice || c.midPrice;
+            const price = livePrices[c.symbol] || c.markPrice || c.midPrice;
             const changePct = c.prevDayPx && c.prevDayPx > 0
               ? ((price - c.prevDayPx) / c.prevDayPx) * 100
               : 0;
@@ -374,9 +376,10 @@ export default function TradePage() {
                   <span className="text-[10px] text-muted-foreground uppercase">{s.label}</span>
                 </div>
                 <div className="text-lg font-semibold tabular-nums">
-                  ${s.midPrice < 1
-                    ? s.midPrice.toFixed(6)
-                    : s.midPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  {(() => {
+                    const lp = s.name === 'GOLD' ? (livePrices['@115'] || s.midPrice) : s.name === 'XAUT' ? (livePrices['@182'] || s.midPrice) : s.midPrice;
+                    return '$' + (lp < 1 ? lp.toFixed(6) : lp.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+                  })()}
                 </div>
               </div>
             ))}
