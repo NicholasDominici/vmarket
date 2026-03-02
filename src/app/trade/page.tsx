@@ -17,6 +17,8 @@ import {
   type AssetCtx,
   getSpotData,
   type SpotData,
+  getSpotBalances,
+  type SpotBalance,
 } from '@/lib/hyperliquid';
 import {
   Loader2, RefreshCw, TrendingUp, TrendingDown,
@@ -58,10 +60,38 @@ export default function TradePage() {
   const { address, isConnected } = useAccount();
   const { openConnectModal } = useConnectModal();
   const { prices: livePrices, connected: wsConnected } = useHyperliquidWs();
+  const prevPricesRef = useRef<Record<string, number>>({});
+  const [flashState, setFlashState] = useState<Record<string, 'up' | 'down' | null>>({});
+
+  // Detect price changes and trigger flash
+  useEffect(() => {
+    const prev = prevPricesRef.current;
+    const flashes: Record<string, 'up' | 'down' | null> = {};
+    let hasChange = false;
+    for (const [sym, price] of Object.entries(livePrices)) {
+      if (prev[sym] && prev[sym] !== price) {
+        flashes[sym] = price > prev[sym] ? 'up' : 'down';
+        hasChange = true;
+      }
+    }
+    if (hasChange) {
+      setFlashState(f => ({ ...f, ...flashes }));
+      // Clear flashes after animation
+      setTimeout(() => {
+        setFlashState(f => {
+          const cleared = { ...f };
+          for (const sym of Object.keys(flashes)) cleared[sym] = null;
+          return cleared;
+        });
+      }, 800);
+    }
+    prevPricesRef.current = { ...livePrices };
+  }, [livePrices]);
   const [commodities, setCommodities] = useState<CommodityData[]>([]);
 
   const [userState, setUserState] = useState<UserState | null>(null);
   const [spotData, setSpotData] = useState<SpotData[]>([]);
+  const [spotBalances, setSpotBalances] = useState<SpotBalance[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [countdown, setCountdown] = useState(REFRESH_INTERVAL);
@@ -117,8 +147,12 @@ export default function TradePage() {
   const fetchUserState = useCallback(async () => {
     if (!address) return;
     try {
-      const state = await getUserState(address);
+      const [state, balances] = await Promise.all([
+        getUserState(address),
+        getSpotBalances(address),
+      ]);
       setUserState(state);
+      setSpotBalances(balances.filter(b => parseFloat(b.total) > 0));
     } catch {
       // User state is non-critical
     }
@@ -135,6 +169,7 @@ export default function TradePage() {
       fetchUserState();
     } else {
       setUserState(null);
+      setSpotBalances([]);
     }
   }, [isConnected, address, fetchUserState]);
 
@@ -185,9 +220,9 @@ export default function TradePage() {
     );
   }
 
-  // Commodity positions from user state
-  const commodityPositions = userState?.assetPositions?.filter(
-    ap => COMMODITY_PERPS.includes(ap.position.coin as typeof COMMODITY_PERPS[number])
+  // All positions from user state
+  const allPositions = userState?.assetPositions?.filter(
+    ap => parseFloat(ap.position.szi) !== 0
   ) ?? [];
 
   return (
@@ -258,7 +293,10 @@ export default function TradePage() {
                       : <TrendingDown className="w-3 h-3 text-data-negative" />}
                   </div>
                   <div className="flex items-baseline gap-3 mb-2">
-                    <span className="text-xl font-semibold tabular-nums">
+                    <span className={`text-xl font-semibold tabular-nums px-1 -mx-1 ${
+                      flashState[c.symbol] === 'up' ? 'price-flash-up' : 
+                      flashState[c.symbol] === 'down' ? 'price-flash-down' : ''
+                    }`}>
                       {formatCurrency(price)}
                     </span>
                     <span className={`text-xs font-medium tabular-nums ${isUp ? 'text-data-positive' : 'text-data-negative'}`}>
@@ -458,15 +496,41 @@ export default function TradePage() {
         </div>
       )}
 
-      {/* Open Commodity Positions */}
-      {isConnected && commodityPositions.length > 0 && (
+      {/* Spot Holdings */}
+      {isConnected && spotBalances.length > 0 && (
+        <div className="border border-border rounded-md bg-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Wallet className="w-3.5 h-3.5 text-purple-400" />
+            <span className="text-[11px] text-muted-foreground uppercase tracking-wider">Spot Holdings</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {spotBalances.map(b => {
+              const price = livePrices[b.coin] || 0;
+              const total = parseFloat(b.total);
+              const value = price * total;
+              return (
+                <div key={b.coin} className="border border-border/50 rounded-md p-3">
+                  <div className="text-[10px] text-muted-foreground uppercase mb-1">{b.coin}</div>
+                  <div className="text-sm font-semibold tabular-nums">{total.toLocaleString(undefined, {maximumFractionDigits: 4})}</div>
+                  {value > 0 && (
+                    <div className="text-[10px] text-muted-foreground tabular-nums">${formatCurrency(value)}</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Open Positions */}
+      {isConnected && allPositions.length > 0 && (
         <div className="border border-border rounded-md bg-card p-4">
           <div className="flex items-center gap-2 mb-3">
             <TrendingUp className="w-3.5 h-3.5 text-data-positive" />
             <span className="text-[11px] text-muted-foreground uppercase tracking-wider">Open Positions</span>
           </div>
           <div className="space-y-2">
-            {commodityPositions.map(ap => {
+            {allPositions.map(ap => {
               const pos = ap.position;
               const pnl = parseFloat(pos.unrealizedPnl);
               const isProfit = pnl >= 0;

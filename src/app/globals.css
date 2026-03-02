@@ -33,7 +33,7 @@
   --secondary: oklch(0.93 0 0);
   --secondary-foreground: oklch(0.15 0 0);
   --muted: oklch(0.93 0 0);
-  --muted-foreground: oklch(0.45 0 0);
+  --muted-foreground: oklch(0.6 0 0);
   --accent: oklch(0.93 0 0);
   --accent-foreground: oklch(0.15 0 0);
   --destructive: oklch(0.55 0.15 25);
@@ -44,21 +44,21 @@
 
 .dark {
   --background: oklch(0.1 0 0);
-  --foreground: oklch(0.85 0 0);
+  --foreground: oklch(0.92 0 0);
   --card: oklch(0.12 0 0);
-  --card-foreground: oklch(0.85 0 0);
+  --card-foreground: oklch(0.92 0 0);
   --popover: oklch(0.12 0 0);
-  --popover-foreground: oklch(0.85 0 0);
+  --popover-foreground: oklch(0.92 0 0);
   --primary: oklch(0.75 0 0);
   --primary-foreground: oklch(0.1 0 0);
   --secondary: oklch(0.15 0 0);
-  --secondary-foreground: oklch(0.85 0 0);
+  --secondary-foreground: oklch(0.92 0 0);
   --muted: oklch(0.15 0 0);
-  --muted-foreground: oklch(0.45 0 0);
+  --muted-foreground: oklch(0.6 0 0);
   --accent: oklch(0.15 0 0);
-  --accent-foreground: oklch(0.85 0 0);
+  --accent-foreground: oklch(0.92 0 0);
   --destructive: oklch(0.55 0.15 25);
-  --border: oklch(1 0 0 / 6%);
+  --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 8%);
   --ring: oklch(0.45 0 0);
 }
@@ -159,3 +159,23 @@
   border-radius: 2px;
 }
 @import '@rainbow-me/rainbowkit/styles.css';
+
+/* Price update flash animation */
+@keyframes price-flash {
+  0% { background-color: transparent; }
+  15% { background-color: oklch(0.85 0.1 145 / 15%); }
+  100% { background-color: transparent; }
+}
+@keyframes price-flash-down {
+  0% { background-color: transparent; }
+  15% { background-color: oklch(0.65 0.15 25 / 15%); }
+  100% { background-color: transparent; }
+}
+.price-flash-up {
+  animation: price-flash 0.8s ease-out;
+  border-radius: 2px;
+}
+.price-flash-down {
+  animation: price-flash-down 0.8s ease-out;
+  border-radius: 2px;
+}

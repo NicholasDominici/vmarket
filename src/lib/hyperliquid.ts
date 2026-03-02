@@ -118,3 +118,15 @@ export function getCommodityData(
     };
   });
 }
+
+
+export type SpotBalance = {
+  coin: string;
+  hold: string;
+  total: string;
+};
+
+export async function getSpotBalances(user: string): Promise<SpotBalance[]> {
+  const result = await postInfo({ type: 'spotClearinghouseState', user });
+  return (result as { balances: SpotBalance[] })?.balances ?? [];
+}
