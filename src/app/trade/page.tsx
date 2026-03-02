@@ -228,51 +228,6 @@ export default function TradePage() {
         </div>
       )}
 
-      {/* Live Prices (24/7 via Hyperliquid) */}
-      <div className="border border-border rounded-md bg-card p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Flame className="w-3.5 h-3.5 text-data-warning" />
-          <span className="text-[11px] text-muted-foreground uppercase tracking-wider">
-            Live Prices — 24/7
-          </span>
-          <span className="text-[9px] text-data-positive px-1.5 py-0.5 border border-data-positive/30 rounded-sm ml-auto">
-            LIVE
-          </span>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {commodities.map((c) => {
-            const Icon = COMMODITY_ICONS[c.symbol] || Flame;
-            const label = COMMODITY_LABELS[c.symbol] || c.symbol;
-            const price = c.markPrice || c.midPrice;
-            const changePct = c.prevDayPx && c.prevDayPx > 0
-              ? ((price - c.prevDayPx) / c.prevDayPx) * 100
-              : 0;
-            return (
-              <div key={c.symbol} className="border border-border/50 rounded-md p-3 glow-interactive">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Icon className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-[10px] text-muted-foreground uppercase">{label}</span>
-                </div>
-                <div className="text-lg font-semibold tabular-nums">
-                  ${price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                </div>
-                <div className={`text-xs font-medium tabular-nums ${changePct >= 0 ? 'text-data-positive' : 'text-data-negative'}`}>
-                  {changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}%
-                </div>
-                {c.dayVolume > 0 && (
-                  <div className="text-[9px] text-muted-foreground/50 mt-1">
-                    Vol: ${c.dayVolume >= 1e6 ? (c.dayVolume/1e6).toFixed(1)+'M' : c.dayVolume >= 1e3 ? (c.dayVolume/1e3).toFixed(0)+'K' : c.dayVolume.toFixed(0)}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-          {commodities.length === 0 && (
-            <div className="col-span-full text-xs text-muted-foreground">Loading prices...</div>
-          )}
-        </div>
-      </div>
-
       {/* Spot Gold Tokens (24/7) */}
       {spotData.length > 0 && (
         <div className="border border-border rounded-md bg-card p-4">
