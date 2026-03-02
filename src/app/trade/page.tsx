@@ -239,7 +239,7 @@ export default function TradePage() {
             LIVE
           </span>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {commodities.map((c) => {
             const Icon = COMMODITY_ICONS[c.symbol] || Flame;
             const label = COMMODITY_LABELS[c.symbol] || c.symbol;
@@ -247,21 +247,105 @@ export default function TradePage() {
             const changePct = c.prevDayPx && c.prevDayPx > 0
               ? ((price - c.prevDayPx) / c.prevDayPx) * 100
               : 0;
+            const isUp = changePct >= 0;
+            const isExpanded = activePanel === c.symbol;
+            const trade = getTradeState(c.symbol);
             return (
-              <div key={c.symbol} className="border border-border/50 rounded-md p-3 glow-interactive">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Icon className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-[10px] text-muted-foreground uppercase">{label}</span>
+              <div key={c.symbol} className="border border-border/50 rounded-md glow-interactive">
+                <div className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <Icon className="w-3.5 h-3.5 text-data-warning" />
+                      <span className="text-[10px] text-muted-foreground uppercase">{label}</span>
+                      <span className="text-[9px] text-muted-foreground/50">{c.symbol}</span>
+                    </div>
+                    {isUp
+                      ? <TrendingUp className="w-3 h-3 text-data-positive" />
+                      : <TrendingDown className="w-3 h-3 text-data-negative" />}
+                  </div>
+                  <div className="flex items-baseline gap-3 mb-2">
+                    <span className="text-xl font-semibold tabular-nums">
+                      {formatCurrency(price)}
+                    </span>
+                    <span className={`text-xs font-medium tabular-nums ${isUp ? 'text-data-positive' : 'text-data-negative'}`}>
+                      {isUp ? '+' : ''}{changePct.toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-[9px] text-muted-foreground/60">
+                    <span>Vol: ${formatNumber(c.dayVolume)}</span>
+                    <span>OI: ${formatNumber(c.openInterest)}</span>
+                    <span>Fund: {c.funding >= 0 ? '+' : ''}{c.funding.toFixed(4)}%</span>
+                  </div>
+                  <button
+                    onClick={() => setActivePanel(isExpanded ? null : c.symbol)}
+                    className="mt-2 w-full text-center text-[10px] text-muted-foreground hover:text-foreground uppercase tracking-wider py-1 border border-border/50 rounded-sm transition-colors hover:bg-secondary/30"
+                  >
+                    {isExpanded ? 'Close' : 'Trade'}
+                  </button>
                 </div>
-                <div className="text-lg font-semibold tabular-nums">
-                  ${price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                </div>
-                <div className={`text-xs font-medium tabular-nums ${changePct >= 0 ? 'text-data-positive' : 'text-data-negative'}`}>
-                  {changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}%
-                </div>
-                {c.dayVolume > 0 && (
-                  <div className="text-[9px] text-muted-foreground/50 mt-1">
-                    Vol: ${c.dayVolume >= 1e6 ? (c.dayVolume/1e6).toFixed(1)+'M' : c.dayVolume >= 1e3 ? (c.dayVolume/1e3).toFixed(0)+'K' : c.dayVolume.toFixed(0)}
+                {isExpanded && (
+                  <div className="border-t border-border p-3 space-y-2">
+                    {!isConnected ? (
+                      <button
+                        onClick={() => openConnectModal?.()}
+                        className="w-full py-2 text-xs font-medium rounded-md bg-purple-500 text-white hover:bg-purple-600 transition-all uppercase tracking-wider"
+                      >
+                        Connect Wallet to Trade
+                      </button>
+                    ) : (
+                      <>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => updateTrade(c.symbol, { side: 'long' })}
+                            className={`flex-1 py-1.5 text-[10px] font-medium rounded-sm uppercase tracking-wider transition-colors ${
+                              trade.side === 'long'
+                                ? 'bg-data-positive text-white'
+                                : 'border border-border text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            Long
+                          </button>
+                          <button
+                            onClick={() => updateTrade(c.symbol, { side: 'short' })}
+                            className={`flex-1 py-1.5 text-[10px] font-medium rounded-sm uppercase tracking-wider transition-colors ${
+                              trade.side === 'short'
+                                ? 'bg-data-negative text-white'
+                                : 'border border-border text-muted-foreground hover:text-foreground'
+                            }`}
+                          >
+                            Short
+                          </button>
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            placeholder="Size (USD)"
+                            value={trade.size}
+                            onChange={e => updateTrade(c.symbol, { size: e.target.value })}
+                            className="flex-1 h-7 px-2 text-xs bg-secondary/30 border border-border rounded-sm tabular-nums"
+                          />
+                          <select
+                            value={trade.leverage}
+                            onChange={e => updateTrade(c.symbol, { leverage: parseInt(e.target.value) })}
+                            className="h-7 px-2 text-xs bg-secondary/30 border border-border rounded-sm"
+                          >
+                            {[1,2,3,5,10,20,50].map(l => (
+                              <option key={l} value={l}>{l}x</option>
+                            ))}
+                          </select>
+                        </div>
+                        <button
+                          onClick={() => handleTrade(c.symbol)}
+                          className={`w-full py-2 text-xs font-medium rounded-sm uppercase tracking-wider transition-colors ${
+                            trade.side === 'long'
+                              ? 'bg-data-positive hover:bg-data-positive/80 text-white'
+                              : 'bg-data-negative hover:bg-data-negative/80 text-white'
+                          }`}
+                        >
+                          {trade.side === 'long' ? 'Buy Long' : 'Sell Short'} {c.symbol}
+                        </button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -413,237 +497,6 @@ export default function TradePage() {
                 </div>
               );
             })}
-          </div>
-        </div>
-      )}
-
-      {/* Commodity Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {commodities.map(c => {
-          const Icon = COMMODITY_ICONS[c.symbol] ?? Flame;
-          const label = COMMODITY_LABELS[c.symbol] ?? c.symbol;
-          const change24h = c.prevDayPx > 0
-            ? ((c.midPrice - c.prevDayPx) / c.prevDayPx) * 100
-            : 0;
-          const isUp = change24h >= 0;
-          const isExpanded = activePanel === c.symbol;
-          const trade = getTradeState(c.symbol);
-
-          return (
-            <div key={c.symbol} className="border border-border rounded-md bg-card glow-interactive">
-              {/* Price Card */}
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Icon className="w-4 h-4 text-data-warning" />
-                    <span className="text-[11px] text-muted-foreground uppercase tracking-wider">{label}</span>
-                    <span className="text-[10px] text-muted-foreground/60">{c.symbol}</span>
-                  </div>
-                  {isUp
-                    ? <TrendingUp className="w-3.5 h-3.5 text-data-positive" />
-                    : <TrendingDown className="w-3.5 h-3.5 text-data-negative" />
-                  }
-                </div>
-
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                  <div>
-                    <div className="text-[10px] text-muted-foreground uppercase">Mid Price</div>
-                    <div className="text-lg font-semibold tabular-nums">
-                      {formatCurrency(c.midPrice)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-muted-foreground uppercase">Mark Price</div>
-                    <div className="text-lg font-semibold tabular-nums">
-                      {formatCurrency(c.markPrice)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-muted-foreground uppercase">24h Change</div>
-                    <div className={`text-sm font-medium tabular-nums ${isUp ? 'text-data-positive' : 'text-data-negative'}`}>
-                      {isUp ? '+' : ''}{change24h.toFixed(2)}%
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-muted-foreground uppercase">24h Volume</div>
-                    <div className="text-sm font-semibold tabular-nums">
-                      ${formatNumber(c.dayVolume)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-muted-foreground uppercase">Funding Rate</div>
-                    <div className={`text-sm font-medium tabular-nums ${c.funding >= 0 ? 'text-data-positive' : 'text-data-negative'}`}>
-                      {c.funding >= 0 ? '+' : ''}{c.funding.toFixed(4)}%
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-muted-foreground uppercase">Open Interest</div>
-                    <div className="text-sm font-semibold tabular-nums">
-                      ${formatNumber(c.openInterest)}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Trade Toggle */}
-                <button
-                  onClick={() => setActivePanel(isExpanded ? null : c.symbol)}
-                  className="mt-3 w-full text-center text-[11px] text-muted-foreground hover:text-foreground uppercase tracking-wider py-1.5 border border-border/50 rounded-sm transition-colors hover:bg-secondary/30"
-                >
-                  {isExpanded ? 'Close Trading Panel' : 'Open Trading Panel'}
-                </button>
-              </div>
-
-              {/* Trading Panel */}
-              {isExpanded && (
-                <div className="border-t border-border p-4 space-y-3">
-                  {!isConnected && (
-                    <div className="flex items-center gap-2 text-[11px] text-data-warning">
-                      <AlertTriangle className="w-3.5 h-3.5" />
-                      Connect wallet to trade
-                    </div>
-                  )}
-
-                  {/* Side Toggle */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => updateTrade(c.symbol, { side: 'long' })}
-                      className={`py-2 text-sm font-medium rounded-md transition-all ${
-                        trade.side === 'long'
-                          ? 'bg-data-positive/20 text-data-positive border border-data-positive/30'
-                          : 'border border-border text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      Buy Long
-                    </button>
-                    <button
-                      onClick={() => updateTrade(c.symbol, { side: 'short' })}
-                      className={`py-2 text-sm font-medium rounded-md transition-all ${
-                        trade.side === 'short'
-                          ? 'bg-data-negative/20 text-data-negative border border-data-negative/30'
-                          : 'border border-border text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      Sell Short
-                    </button>
-                  </div>
-
-                  {/* Order Type */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => updateTrade(c.symbol, { orderType: 'market' })}
-                      className={`py-1.5 text-[11px] font-medium rounded-sm transition-all uppercase tracking-wider ${
-                        trade.orderType === 'market'
-                          ? 'bg-secondary text-foreground'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      Market
-                    </button>
-                    <button
-                      onClick={() => updateTrade(c.symbol, { orderType: 'limit' })}
-                      className={`py-1.5 text-[11px] font-medium rounded-sm transition-all uppercase tracking-wider ${
-                        trade.orderType === 'limit'
-                          ? 'bg-secondary text-foreground'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      Limit
-                    </button>
-                  </div>
-
-                  {/* Size Input */}
-                  <div>
-                    <label className="text-[10px] text-muted-foreground uppercase block mb-1">Size (USD)</label>
-                    <input
-                      type="number"
-                      value={trade.size}
-                      onChange={e => updateTrade(c.symbol, { size: e.target.value })}
-                      placeholder="0.00"
-                      className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm tabular-nums placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none transition-[color,box-shadow]"
-                    />
-                  </div>
-
-                  {/* Limit Price (conditional) */}
-                  {trade.orderType === 'limit' && (
-                    <div>
-                      <label className="text-[10px] text-muted-foreground uppercase block mb-1">Limit Price</label>
-                      <input
-                        type="number"
-                        value={trade.limitPrice}
-                        onChange={e => updateTrade(c.symbol, { limitPrice: e.target.value })}
-                        placeholder={c.midPrice.toFixed(2)}
-                        className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm tabular-nums placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none transition-[color,box-shadow]"
-                      />
-                    </div>
-                  )}
-
-                  {/* Leverage Selector */}
-                  <div>
-                    <label className="text-[10px] text-muted-foreground uppercase block mb-1">
-                      Leverage: {trade.leverage}x
-                    </label>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {LEVERAGE_OPTIONS.map(lev => (
-                        <button
-                          key={lev}
-                          onClick={() => updateTrade(c.symbol, { leverage: lev })}
-                          className={`px-2.5 py-1 text-[11px] font-medium rounded-sm transition-all ${
-                            trade.leverage === lev
-                              ? 'bg-secondary text-foreground'
-                              : 'border border-border/50 text-muted-foreground hover:text-foreground hover:border-border'
-                          }`}
-                        >
-                          {lev}x
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Order Summary */}
-                  {trade.size && parseFloat(trade.size) > 0 && (
-                    <div className="border border-border/50 rounded-md p-2.5 text-[11px] text-muted-foreground space-y-1">
-                      <div className="flex justify-between">
-                        <span>Notional</span>
-                        <span className="tabular-nums">{formatCurrency(parseFloat(trade.size))}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Margin Required</span>
-                        <span className="tabular-nums">{formatCurrency(parseFloat(trade.size) / trade.leverage)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Leverage</span>
-                        <span className="tabular-nums">{trade.leverage}x</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Execute Button */}
-                  <button
-                    onClick={() => handleTrade(c.symbol)}
-                    className={`w-full py-2.5 text-sm font-semibold rounded-md transition-all ${
-                      trade.side === 'long'
-                        ? 'bg-data-positive/20 text-data-positive border border-data-positive/30 hover:bg-data-positive/30'
-                        : 'bg-data-negative/20 text-data-negative border border-data-negative/30 hover:bg-data-negative/30'
-                    }`}
-                  >
-                    {trade.side === 'long' ? 'Buy Long' : 'Sell Short'} {label}
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Not Connected Prompt */}
-      {!isConnected && (
-        <div className="border border-border rounded-md bg-card p-6 text-center">
-          <Wallet className="w-5 h-5 text-muted-foreground mx-auto mb-2" />
-          <div className="text-sm text-muted-foreground">
-            Wallet connected — ready to trade
-          </div>
-          <div className="text-[10px] text-muted-foreground/50 mt-1">
-            Use the connect button in the header
           </div>
         </div>
       )}
