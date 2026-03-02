@@ -1,15 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-// Safe wrapper - useAccount only works when WagmiProvider is mounted (client-side)
-function useAccount() {
-  try {
-    const wagmi = require('wagmi');
-    return wagmi.useAccount();
-  } catch {
-    return { address: undefined, isConnected: false };
-  }
-}
+import { useAccount } from 'wagmi';
 import { useConnectModal } from '@rainbow-me/rainbowkit';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import {
