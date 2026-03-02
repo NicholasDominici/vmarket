@@ -9,7 +9,7 @@ import { useState, useEffect, type ReactNode } from 'react';
 
 const config = getDefaultConfig({
   appName: 'vMarket',
-  projectId: '4e8e6bca-cdf3-46ef-abb2-02d008aa0c6b',
+  projectId: 'eae9a50dbbd39ad757941a24d9fdb857',
   chains: [arbitrum],
   ssr: true,
 });
